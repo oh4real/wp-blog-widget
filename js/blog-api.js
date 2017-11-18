@@ -9,7 +9,7 @@ var onDetailPage = false;
 
 var firstBranchBlog = {
 	blogSelector: '#blog.content',
-	blogURL: 'https://blog.kasasa.com',
+	blogURL: 'https://firstbranch.wpengine.com',
 	blogLocation: 'about-us/blog',
 	postsPerPage: 10,
 	showSearchBar: true,
@@ -74,7 +74,6 @@ var firstBranchBlog = {
 			}
 		}
 
-		
 	}
 };
 
@@ -93,73 +92,43 @@ function setupCategory() {
 		page = window.location.href.split('?page=')[1];
 	}
 
-	var xhr = new XMLHttpRequest();
-
-	xhr.addEventListener("progress", updateProgress);
-	xhr.addEventListener("load", transferComplete);
-
-	xhr.open('GET', firstBranchBlog.blogURL + '/wp-json/wp/v2/posts?_embed=true&page=' + page + '&per_page=' + firstBranchBlog.postsPerPage);
-
-	xhr.onload = function() {
-		
-		if (xhr.status >= 200 && xhr.status < 400) {
-			var data = JSON.parse(xhr.responseText);
-
-			// debug stuff for number of posts
-			// get total posts
-			// console.log("%cTotal posts: " + xhr.getResponseHeader("X-WP-Total"), 'color: blue;');
-			// get total pages
-			// console.log("%cTotal pages: " + xhr.getResponseHeader("X-WP-TotalPages"), 'color: blue;');
-
-			// set total pages and posts
-			totalPosts = xhr.getResponseHeader("X-WP-Total");
-			totalPages = xhr.getResponseHeader("X-WP-TotalPages");
-
-			buildCategoryPage(data);
-			if (firstBranchBlog.showPagination == true) {
-				pagination(page);
-			}
-		} else {
-			console.log("We connected to the server, but it returned an error.");
+	jQuery.ajax(
+		{
+			method: 'GET',
+			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+			data: {
+				_embed: true,
+				page: page,
+				per_page: firstBranchBlog.postsPerPage
+			},
+			crossDomain: true
 		}
-	};
+	).done(function(data, status, resp) {
+		// set total pages and posts
+		totalPosts = resp.getResponseHeader("X-WP-Total");
+		totalPages = resp.getResponseHeader("X-WP-TotalPages");
 
-	xhr.onerror = function() {
-		console.log("Connection error " + xhr.statusText);
-	};
-
-	xhr.send();
-
-	console.log('%c----- Currently on page ' + page + ' -----', 'color: green;');
-
+		buildCategoryPage(data);
+		if (firstBranchBlog.showPagination == true) {
+			pagination(page);
+		}
+	});
 }
 
 function setupPost(slug) {
-	var xhr = new XMLHttpRequest();
 	onDetailPage = true;
-
-	xhr.addEventListener("progress", updateProgress);
-	xhr.addEventListener("load", transferComplete);
-
-	xhr.open('GET', firstBranchBlog.blogURL + '/wp-json/wp/v2/posts?slug=' + slug);
-
-	xhr.onload = function() {
-		if (xhr.status >= 200 && xhr.status < 400) {
-			var data = JSON.parse(xhr.responseText);
-			buildDetailPage(data);
-
-		} else {
-			console.log("We connected to the server, but it returned an error.");
+	jQuery.ajax(
+		{
+			method: 'GET',
+			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+			data: {
+				slug: slug
+			},
+			crossDomain: true
 		}
-	};
-
-	xhr.onerror = function() {
-		console.log("Connection error " + xhr.statusText);
-	};
-
-	xhr.send();
-
-	console.log('%c----- Currently on ' + slug + ' page -----', 'color: green;');
+	).done(function(data, status, resp) {
+		buildDetailPage(data);
+	});
 
 	if (firstBranchBlog.showCategoryBackLink == true) {
 		backToCategory.addEventListener('click', function() {
@@ -223,45 +192,32 @@ function buildDetailPage(data) {
 }
 
 function setupBlogSearch() {
-	var blog = document.querySelector(firstBranchBlog.blogSelector);
+	var blog = document.querySelector(firstBranchBlog.blogSelector),
+		searchTerm = window.location.href.split("?term=")[1],
+		searchedFor = '<div class="search-term">Showing results for: <strong>' + searchTerm + '</strong></div>';
 
-	var searchTerm = window.location.href.split("?term=")[1];
-	var xhr = new XMLHttpRequest();
-
-	console.log('Search results for: ' + searchTerm);
-	var searchedFor = '<div class="search-term">Showing results for: <strong>' + searchTerm + '</strong></div>';
-
-	xhr.addEventListener("progress", updateProgress);
-	xhr.addEventListener("load", transferComplete);
-
-	// grab dat data
-	xhr.open('GET', firstBranchBlog.blogURL + '/wp-json/wp/v2/posts?search=' + searchTerm + "&per_page=30&_embed");
-
-	xhr.onload = function() {
-		if (xhr.status >= 200 && xhr.status < 400) {
-
-			var data = JSON.parse(xhr.responseText);
-			buildCategoryPage(data);
-
-			blog.innerHTML = searchedFor + blog.innerHTML;
-
-			if (firstBranchBlog.showCategoryBackLink == true) {
-				backToCategory.addEventListener('click', function() {
-					window.location = 'https://'+ window.location.host + '/' + firstBranchBlog.blogLocation;
-				});
-			}
-
-		} else {
-			console.log("We connected to the server, but it returned an error.");
+	jQuery.ajax(
+		{
+			method: 'GET',
+			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+			data: {
+				_embed: true,
+				per_page: firstBranchBlog.postsPerPage,
+				search: searchTerm
+			},
+			crossDomain: true
 		}
-	};
+	).done(function(data, status, resp) {
+		buildCategoryPage(data);
 
-	xhr.onerror = function() {
-		console.log("Connection error " + xhr.statusText);
-	};
+		blog.innerHTML = searchedFor + blog.innerHTML;
 
-	// send it
-	xhr.send();
+		if (firstBranchBlog.showCategoryBackLink == true) {
+			backToCategory.addEventListener('click', function() {
+				window.location = 'https://'+ window.location.host + '/' + firstBranchBlog.blogLocation;
+			});
+		}
+	});
 }
 
 function setupTagSearch() {
