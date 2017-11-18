@@ -91,27 +91,36 @@ function setupCategory() {
 	if (window.location.href.indexOf("page") > -1) {
 		page = window.location.href.split('?page=')[1];
 	}
+	var requests = [];
+	requests.push(
+		jQuery.ajax(
+			{
+				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+				data: {
+					_embed: true,
+					page: page,
+					per_page: firstBranchBlog.postsPerPage
+				},
+				crossDomain: true
+			}
+		).then(function(data, status, resp) {
+			return {
+				data: data,
+				resp: resp
+			};
+		})
+	);
+	Promise.all(requests).then(function(responses) {
+		responses.forEach(function(response) {
+			// set total pages and posts
+			totalPosts = response.resp.getResponseHeader("X-WP-Total");
+			totalPages = response.resp.getResponseHeader("X-WP-TotalPages");
 
-	jQuery.ajax(
-		{
-			method: 'GET',
-			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
-			data: {
-				_embed: true,
-				page: page,
-				per_page: firstBranchBlog.postsPerPage
-			},
-			crossDomain: true
-		}
-	).done(function(data, status, resp) {
-		// set total pages and posts
-		totalPosts = resp.getResponseHeader("X-WP-Total");
-		totalPages = resp.getResponseHeader("X-WP-TotalPages");
-
-		buildCategoryPage(data);
-		if (firstBranchBlog.showPagination == true) {
-			pagination(page);
-		}
+			buildCategoryPage(response.data);
+			if (firstBranchBlog.showPagination == true) {
+				pagination(page);
+			}
+		});
 	});
 }
 
@@ -119,7 +128,6 @@ function setupPost(slug) {
 	onDetailPage = true;
 	jQuery.ajax(
 		{
-			method: 'GET',
 			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
 			data: {
 				slug: slug
@@ -198,7 +206,6 @@ function setupBlogSearch() {
 
 	jQuery.ajax(
 		{
-			method: 'GET',
 			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
 			data: {
 				_embed: true,
