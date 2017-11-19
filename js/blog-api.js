@@ -9,7 +9,7 @@ var onDetailPage = false;
 
 var firstBranchBlog = {
 	blogSelector: '#blog.content',
-	blogURL: 'https://firstbranch.wpengine.com',
+	blogURL: 'https://alpinebank.wpengine.com',
 	blogLocation: 'about-us/blog',
 	postsPerPage: 10,
 	showSearchBar: true,
@@ -23,6 +23,7 @@ var firstBranchBlog = {
 	includeLinkInTitle: false,
 
 	blogSetup: function() {
+		getAllTags();
 		var blog = document.querySelector(firstBranchBlog.blogSelector);
 
 		blog.innerHTML += '<div class="blog-loading"><i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span></div>';
@@ -87,40 +88,123 @@ function transferComplete() {
 	document.querySelector('.blog-loading').style.visibility = "hidden";
 }
 
-function setupCategory() {
-	if (window.location.href.indexOf("page") > -1) {
-		page = window.location.href.split('?page=')[1];
+function getAllTags() {
+	var productName = 'elite checking';
+
+	var getTagId = function(tags, tagName) {
+		var tagId;
+		tags.forEach(function(tag) {
+			if (tag.name == tagName) {
+				tagId = tag.id;
+			}
+		});
+		return tagId;
 	}
-	var requests = [];
-	requests.push(
-		jQuery.ajax(
+	var featuredTagId, productTagId, randomTagId;
+
+	jQuery.ajax({
+		url: firstBranchBlog.blogURL + '/wp-json/wp/v2/tags',
+		crossDomain: true
+	}).done(function(tags) {
+		featuredTagId = getTagId(tags, 'featured');
+		productTagId = getTagId(tags, productName);
+		
+		var getFeaturedProductRequest = jQuery.ajax(
+			{
+				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+				data: {
+					_embed: true,
+					per_page: 1,
+					tags: featuredTagId + '+' + productTagId
+				},
+				crossDomain: true
+			}
+		);
+		var getFeaturedRequest = jQuery.ajax(
+			{
+				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+				data: {
+					_embed: true,
+					per_page: 1,
+					tags: featuredTagId
+				},
+				crossDomain: true
+			}
+		);
+		var getRelatedRequest = jQuery.ajax(
 			{
 				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
 				data: {
 					_embed: true,
 					page: page,
-					per_page: firstBranchBlog.postsPerPage
+					per_page: firstBranchBlog.postsPerPage - 1,
+					tags: productTagId
 				},
 				crossDomain: true
 			}
-		).then(function(data, status, resp) {
-			return {
-				data: data,
-				resp: resp
-			};
-		})
-	);
-	Promise.all(requests).then(function(responses) {
-		responses.forEach(function(response) {
+		);
+		jQuery.when(getFeaturedProductRequest, getFeaturedRequest, getRelatedRequest).done(function(featuredProductPosts, featuredPosts, relatedPosts) {
+			/**
+			 * featuredPosts = [
+			 *     data,
+			 *     status,
+			 *     xhr
+			 * ]
+			 */
+			var postList = featuredProductPosts.concat(featuredPosts, relatedPosts);
 			// set total pages and posts
-			totalPosts = response.resp.getResponseHeader("X-WP-Total");
-			totalPages = response.resp.getResponseHeader("X-WP-TotalPages");
+			totalPosts = featuredPosts[2].getResponseHeader("X-WP-Total");
+			totalPages = featuredPosts[2].getResponseHeader("X-WP-TotalPages");
 
-			buildCategoryPage(response.data);
-			if (firstBranchBlog.showPagination == true) {
-				pagination(page);
-			}
+			buildCategoryPage(postList);
 		});
+	});
+}
+
+function setupCategory() {
+	if (window.location.href.indexOf("page") > -1) {
+		page = window.location.href.split('?page=')[1];
+	}
+	var getFeaturedRequest = jQuery.ajax(
+			{
+				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+				data: {
+					_embed: true,
+					page: page,
+					per_page: firstBranchBlog.postsPerPage,
+					tags: featuredTagFilter = '4'
+				},
+				crossDomain: true
+			}
+		);
+	var getRelatedRequest = jQuery.ajax(
+		{
+			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
+			data: {
+				_embed: true,
+				page: page,
+				per_page: firstBranchBlog.postsPerPage,
+				tags: relatedTagFilter = '7'
+			},
+			crossDomain: true
+		}
+	);
+	jQuery.when(getFeaturedRequest, getRelatedRequest).done(function(featuredPosts, relatedPosts) {
+	    /**
+		 * featuredPosts = [
+		 *     data,
+		 *     status,
+		 *     xhr
+		 * ]
+		 */
+		// set total pages and posts
+		totalPosts = featuredPosts[2].getResponseHeader("X-WP-Total");
+		totalPages = featuredPosts[2].getResponseHeader("X-WP-TotalPages");
+
+		buildCategoryPage(featuredPosts[0]);
+		if (firstBranchBlog.showPagination == true) {
+			pagination(page);
+		}
 	});
 }
 
