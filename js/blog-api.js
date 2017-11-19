@@ -156,7 +156,7 @@ function getAllTags() {
 			totalPosts = featuredPosts[2].getResponseHeader("X-WP-Total");
 			totalPages = featuredPosts[2].getResponseHeader("X-WP-TotalPages");
 
-			buildCategoryPage(postList);
+			console.log(postList);
 		});
 	});
 }
@@ -165,47 +165,24 @@ function setupCategory() {
 	if (window.location.href.indexOf("page") > -1) {
 		page = window.location.href.split('?page=')[1];
 	}
-	var getFeaturedRequest = jQuery.ajax(
-			{
-				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
-				data: {
-					_embed: true,
-					page: page,
-					per_page: firstBranchBlog.postsPerPage,
-					tags: featuredTagFilter = '4'
-				},
-				crossDomain: true
-			}
-		);
-	var getRelatedRequest = jQuery.ajax(
-		{
+	jQuery.ajax({
 			url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
 			data: {
 				_embed: true,
 				page: page,
-				per_page: firstBranchBlog.postsPerPage,
-				tags: relatedTagFilter = '7'
+				per_page: firstBranchBlog.postsPerPage
 			},
 			crossDomain: true
-		}
-	);
-	jQuery.when(getFeaturedRequest, getRelatedRequest).done(function(featuredPosts, relatedPosts) {
-	    /**
-		 * featuredPosts = [
-		 *     data,
-		 *     status,
-		 *     xhr
-		 * ]
-		 */
-		// set total pages and posts
-		totalPosts = featuredPosts[2].getResponseHeader("X-WP-Total");
-		totalPages = featuredPosts[2].getResponseHeader("X-WP-TotalPages");
+		})
+		.done(function(data, status, xhr) {
+			totalPosts = xhr.getResponseHeader("X-WP-Total");
+			totalPages = xhr.getResponseHeader("X-WP-TotalPages");
 
-		buildCategoryPage(featuredPosts[0]);
-		if (firstBranchBlog.showPagination == true) {
-			pagination(page);
-		}
-	});
+			buildCategoryPage(data);
+			if (firstBranchBlog.showPagination == true) {
+				pagination(page);
+			}
+		});
 }
 
 function setupPost(slug) {
