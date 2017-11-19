@@ -41,9 +41,7 @@ TaggedPosts = function (blogUrl, blogLocation, postsPerPage) {
 TaggedPosts.prototype.assemblePostsByTags = function (tagList) {
     var listOfTags = tagList || [
         { name: 'featured', count: 1 },
-        { name: 'related', count: 1 },
-        { name: 'elite checking' || '', count: this.postsPerPage },
-        { name: 'hooplah', count: 5 }
+        { name: 'related', count: this.postsPerPage }
     ];
     var self = this;
     jQuery.ajax({
@@ -55,12 +53,11 @@ TaggedPosts.prototype.assemblePostsByTags = function (tagList) {
             requests.push(self.requestPostsFromTag(tags, tagObj.count, tagObj.name));
         })
         jQuery.when.apply(jQuery, requests).done(function () {
-            console.log('multiples', arguments);
             var compiled = [];
             for (var i = 0; i < arguments.length; i++) {
                 compiled = compiled.concat(arguments[i].data);
             }
-            console.log({compiled: compiled});
+            console.log({ compiled: compiled, uniques: self.removeDuplicates(compiled)});
             buildCategoryPage(self.removeDuplicates(compiled));
         })
     });
