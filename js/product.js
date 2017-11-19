@@ -16,6 +16,56 @@ TaggedPosts = function (blogUrl, blogLocation, postsPerPage) {
     this.postsPerPage = postsPerPage || 10;
 }
 
+/**
+ * 
+ * Supply an array of tag names and desired max count.
+ * @param [{name:'XXXXX', count:#}, ...]
+ * 
+ * Example usage:
+ * (new TaggedPosts()).assemblePostsByTags(
+ *  [
+ *      {
+ *          name:'featured', 
+ *          count:5
+ *      },
+ *      {
+ *          name:'elite checking', 
+ *          count:3
+ *      }, 
+ *      {   
+ *          name:'related', 
+ *          count:5
+ *      }
+ * ]);
+ */
+TaggedPosts.prototype.assemblePostsByTags = function (tagList) {
+    var listOfTags = tagList || [
+        { name: 'featured', count: 1 },
+        { name: 'related', count: 1 },
+        { name: 'elite checking' || '', count: this.postsPerPage },
+        { name: 'hooplah', count: 5 }
+    ];
+    var self = this;
+    jQuery.ajax({
+        url: this.blogURL + '/wp-json/wp/v2/tags',
+        crossDomain: true
+    }).done(function (tags) {
+        var requests = [];
+        listOfTags.forEach(function (tagObj) {
+            requests.push(self.requestPostsFromTag(tags, tagObj.count, tagObj.name));
+        })
+        jQuery.when.apply(jQuery, requests).done(function () {
+            console.log('multiples', arguments);
+            var compiled = [];
+            for (var i = 0; i < arguments.length; i++) {
+                compiled = compiled.concat(arguments[i].data);
+            }
+            console.log({compiled: compiled});
+            buildCategoryPage(self.removeDuplicates(compiled));
+        })
+    });
+}
+
 TaggedPosts.prototype.assemblePosts = function(productTag) {
     var self = this;
     jQuery.ajax({
@@ -23,23 +73,20 @@ TaggedPosts.prototype.assemblePosts = function(productTag) {
         crossDomain: true
     }).done(function (tags) {
         var featuredPostsReq = self.requestPostsFromTag(tags, 1, 'featured');
-        var productPostsReq = self.requestPostsFromTag(tags, self.postsPerPage, productTag || 'promo'); // thinking promo = the cross promotional
-        var relatedPostsReq = self.requestPostsFromTag(tags, 3, 'related');
-        var otherPostsReq = self.requestPostsFromTag(tags, 10, 'hooplah'); // will return empty array []
+        var productPostsReq = self.requestPostsFromTag(tags, self.postsPerPage, productTag || '');
+        var relatedPostsReq = self.requestPostsFromTag(tags, 3, 'related'); 
         // add more as needed
 
-        jQuery.when(featuredPostsReq, productPostsReq, relatedPostsReq, otherPostsReq)
-            .then(function (featuredPostsResponse, productPostsResponse, relatedPostsResponse, otherPostsResponse) {
+        jQuery.when(featuredPostsReq, productPostsReq, relatedPostsReq)
+            .then(function (featuredPostsResponse, productPostsResponse, relatedPostsResponse) {
                 console.log(
                     featuredPostsResponse, 
                     productPostsResponse, 
-                    relatedPostsResponse, 
-                    otherPostsResponse
+                    relatedPostsResponse
                 );
                 var compiledPosts = featuredPostsResponse.data.concat(
                     productPostsResponse.data, 
-                    relatedPostsResponse.data, 
-                    otherPostsResponse.data // in this example none
+                    relatedPostsResponse.data
                 );
                 console.log(compiledPosts)
                 
