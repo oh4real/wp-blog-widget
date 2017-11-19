@@ -1,8 +1,10 @@
 
 /**
  * 
- * example usage:
+ * Usage examples:
  * `typeof TaggedPosts != 'undefined' ? (new TaggedPosts()).assemblePosts('elite checking') : console.log('include product.js');`
+ * -- or --
+ * `typeof TaggedPosts != 'undefined' ? (new TaggedPosts(url, pathToBlogHtml, postsPerPage)).assemblePosts('elite checking') : console.log('include product.js');`
  * 
  * @param {*} blogUrl 
  * @param {*} blogLocation 
