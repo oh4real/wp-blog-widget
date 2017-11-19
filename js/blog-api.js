@@ -23,7 +23,6 @@ var firstBranchBlog = {
 	includeLinkInTitle: false,
 
 	blogSetup: function() {
-		getAllTags();
 		var blog = document.querySelector(firstBranchBlog.blogSelector);
 
 		blog.innerHTML += '<div class="blog-loading"><i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span></div>';
@@ -86,79 +85,6 @@ function updateProgress() {
 function transferComplete() {
 	console.log('finished');
 	document.querySelector('.blog-loading').style.visibility = "hidden";
-}
-
-function getAllTags() {
-	var productName = 'elite checking';
-
-	var getTagId = function(tags, tagName) {
-		var tagId;
-		tags.forEach(function(tag) {
-			if (tag.name == tagName) {
-				tagId = tag.id;
-			}
-		});
-		return tagId;
-	}
-	var featuredTagId, productTagId, randomTagId;
-
-	jQuery.ajax({
-		url: firstBranchBlog.blogURL + '/wp-json/wp/v2/tags',
-		crossDomain: true
-	}).done(function(tags) {
-		featuredTagId = getTagId(tags, 'featured');
-		productTagId = getTagId(tags, productName);
-		
-		var getFeaturedProductRequest = jQuery.ajax(
-			{
-				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
-				data: {
-					_embed: true,
-					per_page: 1,
-					tags: featuredTagId + '+' + productTagId
-				},
-				crossDomain: true
-			}
-		);
-		var getFeaturedRequest = jQuery.ajax(
-			{
-				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
-				data: {
-					_embed: true,
-					per_page: 1,
-					tags: featuredTagId
-				},
-				crossDomain: true
-			}
-		);
-		var getRelatedRequest = jQuery.ajax(
-			{
-				url: firstBranchBlog.blogURL + '/wp-json/wp/v2/posts',
-				data: {
-					_embed: true,
-					page: page,
-					per_page: firstBranchBlog.postsPerPage - 1,
-					tags: productTagId
-				},
-				crossDomain: true
-			}
-		);
-		jQuery.when(getFeaturedProductRequest, getFeaturedRequest, getRelatedRequest).done(function(featuredProductPosts, featuredPosts, relatedPosts) {
-			/**
-			 * featuredPosts = [
-			 *     data,
-			 *     status,
-			 *     xhr
-			 * ]
-			 */
-			var postList = featuredProductPosts.concat(featuredPosts, relatedPosts);
-			// set total pages and posts
-			totalPosts = featuredPosts[2].getResponseHeader("X-WP-Total");
-			totalPages = featuredPosts[2].getResponseHeader("X-WP-TotalPages");
-
-			console.log(postList);
-		});
-	});
 }
 
 function setupCategory() {
