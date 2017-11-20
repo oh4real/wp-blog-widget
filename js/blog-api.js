@@ -103,7 +103,7 @@ function setupCategory() {
 		.done(function(data, status, xhr) {
 			totalPosts = xhr.getResponseHeader("X-WP-Total");
 			totalPages = xhr.getResponseHeader("X-WP-TotalPages");
-
+			
 			buildCategoryPage(data);
 			if (firstBranchBlog.showPagination == true) {
 				pagination(page);
@@ -122,7 +122,12 @@ function setupPost(slug) {
 			crossDomain: true
 		}
 	).done(function(data, status, resp) {
-		buildDetailPage(data);
+		if (data.length) {
+			buildDetailPage(data);
+		} else {
+			console.log('no data for slug');
+			// replace loading with an Oops
+		}
 	});
 
 	if (firstBranchBlog.showCategoryBackLink == true) {
