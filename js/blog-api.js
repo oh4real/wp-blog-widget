@@ -87,6 +87,12 @@ function transferComplete() {
 	document.querySelector('.blog-loading').style.visibility = "hidden";
 }
 
+function notFound(msg) {
+	var loader = document.querySelector('.blog-loading');
+	loader.style.visibility = "hidden";
+	loader.parentElement.innerHTML = '<div class="blog-error">' + msg + '</div>';
+}
+
 function setupCategory() {
 	if (window.location.href.indexOf("page") > -1) {
 		page = window.location.href.split('?page=')[1];
@@ -103,7 +109,7 @@ function setupCategory() {
 		.done(function(data, status, xhr) {
 			totalPosts = xhr.getResponseHeader("X-WP-Total");
 			totalPages = xhr.getResponseHeader("X-WP-TotalPages");
-			
+
 			buildCategoryPage(data);
 			if (firstBranchBlog.showPagination == true) {
 				pagination(page);
@@ -127,6 +133,7 @@ function setupPost(slug) {
 		} else {
 			console.log('no data for slug');
 			// replace loading with an Oops
+			notFound('Oops. Blog post not found!');
 		}
 	});
 
