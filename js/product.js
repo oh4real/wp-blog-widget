@@ -26,11 +26,11 @@ TaggedPosts = function (blogUrl, blogLocation, postsPerPage) {
  *  [
  *      {
  *          name:'featured', 
- *          count:5
+ *          count:1
  *      },
  *      {
  *          name:'elite checking', 
- *          count:3
+ *          count:9
  *      }, 
  *      {   
  *          name:'related', 
@@ -57,10 +57,18 @@ TaggedPosts.prototype.assemblePostsByTags = function (tagList) {
             for (var i = 0; i < arguments.length; i++) {
                 compiled = compiled.concat(arguments[i].data);
             }
-            console.log({ compiled: compiled, uniques: self.removeDuplicates(compiled)});
-            buildCategoryPage(self.removeDuplicates(compiled));
+
+            var uniques = self.removeDuplicates(compiled);
+            console.log({ compiled: compiled, uniques: uniques });
+            // you could replace buildCategoryPage() from bog-api.js with:
+            // self.buildProductActivePosts(uniques);   
+            buildCategoryPage(uniques);
         })
     });
+}
+
+TaggedPosts.prototype.buildProductActivePosts = function(posts) {
+    // render posts into the DOM (similar to)
 }
 
 TaggedPosts.prototype.assemblePosts = function(productTag) {
@@ -76,11 +84,6 @@ TaggedPosts.prototype.assemblePosts = function(productTag) {
 
         jQuery.when(featuredPostsReq, productPostsReq, relatedPostsReq)
             .then(function (featuredPostsResponse, productPostsResponse, relatedPostsResponse) {
-                console.log(
-                    featuredPostsResponse, 
-                    productPostsResponse, 
-                    relatedPostsResponse
-                );
                 var compiledPosts = featuredPostsResponse.data.concat(
                     productPostsResponse.data, 
                     relatedPostsResponse.data
@@ -89,6 +92,7 @@ TaggedPosts.prototype.assemblePosts = function(productTag) {
                 
                 // call global method to inject/render into element. e.g. renderFeaturedPosts(compiledPosts)
                 // buildCategoryPage is an example for product.html
+                // self.buildProductWidget(self.removeDuplicates(compiledPosts));
                 buildCategoryPage(self.removeDuplicates(compiledPosts));
             });
     });
