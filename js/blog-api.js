@@ -22,7 +22,8 @@ var firstBranchBlog = {
 	showCategoryBackLink: true,
 	includeLinkInTitle: false,
 
-	blogSetup: function() {
+	blogSetup: function(blogUrl) {
+		this.blogURL = blogUrl || this.blogURL;
 		var blog = document.querySelector(firstBranchBlog.blogSelector);
 
 		blog.innerHTML += '<div class="blog-loading"><i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span></div>';
